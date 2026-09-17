@@ -65,6 +65,9 @@ type SocketState = 'connected' | 'connecting' | 'offline';
 const avatarColors = ['#f4a7bd', '#9fdbe3', '#f4d275', '#c5b3ef', '#f1aa83', '#acd69d'];
 const authorColors = ['#c11563', '#e83d24', '#087db6', '#9f159d', '#188fba'];
 
+// أسماء صاحب الموقع والمدراء للحصول على التاج واللمعة الذهبية
+const ownerNames = ['المدير', 'صاحب الموقع', 'الادمن', 'Admin'];
+
 function formatCount(value: number) {
   return new Intl.NumberFormat('ar-SA').format(value);
 }
@@ -112,6 +115,7 @@ function useLiveSocket(
         roomId: message.roomId,
         body: message.body,
         author: message.author,
+        authorRole: message.authorRole,
       });
     }
   }, []);
@@ -125,16 +129,19 @@ function Avatar({
   index = 0,
   online = true,
   size = 'md',
+  isAdmin = false,
 }: {
   name: string;
   initials?: string;
   index?: number;
   online?: boolean;
   size?: 'sm' | 'md' | 'lg';
+  isAdmin?: boolean;
 }) {
   const label = initials || name.slice(0, 2);
+  const ownerAvatarStyle = isAdmin ? { background: 'linear-gradient(135deg, #d4af37, #aa771c)', boxShadow: '0 0 10px rgba(212, 175, 55, 0.8)', border: '2px solid #fff' } : {};
   return (
-    <span className={`legacy-avatar legacy-avatar-${size}`} style={{ background: avatarColors[index % avatarColors.length] }} title={name}>
+    <span className={`legacy-avatar legacy-avatar-${size}`} style={isAdmin ? ownerAvatarStyle : { background: avatarColors[index % avatarColors.length] }} title={name}>
       {label}
       {online && <i className="legacy-online-dot" />}
     </span>
@@ -269,8 +276,19 @@ function SideDrawer({ open, onClose, onNavigate }: { open: boolean; onClose: () 
   );
 }
 
-function RoomCards({ rooms, onSelect }: { rooms: Room[]; onSelect: (roomId: string) => void }) {
+function RoomCards({ rooms, onSelect, isOwner, onCreateRoom }: { rooms: Room[]; onSelect: (roomId: string) => void; isOwner: boolean; onCreateRoom: (name: string) => void }) {
   const flags = ['🇯🇴', '🌐', '🇪🇬', '🎭', '🇩🇿', '💃'];
+  const [showCreate, setShowCreate] = useState(false);
+  const [newRoomName, setNewRoomName] = useState('');
+
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRoomName.trim()) return;
+    onCreateRoom(newRoomName.trim());
+    setNewRoomName('');
+    setShowCreate(false);
+  };
+
   return (
     <section className="legacy-room-screen">
       <div className="legacy-room-brand">
@@ -280,6 +298,35 @@ function RoomCards({ rooms, onSelect }: { rooms: Room[]; onSelect: (roomId: stri
         </div>
         <span className="legacy-brand-avatar">👨🏻</span>
       </div>
+
+      {isOwner && (
+        <div style={{ padding: '10px 16px' }}>
+          {!showCreate ? (
+            <button
+              type="button"
+              onClick={() => setShowCreate(true)}
+              style={{ width: '100%', padding: '10px', background: 'linear-gradient(135deg, #d4af37, #aa771c)', color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 2px 8px rgba(212,175,55,0.4)' }}
+            >
+              + إنشاء غرفة جديدة (خاص بصاحب الموقع)
+            </button>
+          ) : (
+            <form onSubmit={handleCreate} style={{ background: '#1e1e1e', padding: '12px', borderRadius: '8px', border: '1px solid #d4af37' }}>
+              <input
+                type="text"
+                value={newRoomName}
+                onChange={(e) => setNewRoomName(e.target.value)}
+                placeholder="اكتب اسم الغرفة الجديدة..."
+                style={{ width: '100%', padding: '8px', marginBottom: '8px', background: '#2a2a2a', color: '#fff', border: '1px solid #444', borderRadius: '6px', textAlign: 'right' }}
+              />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button type="submit" style={{ flex: 1, padding: '8px', background: '#d4af37', color: '#000', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>حفظ وإضافة</button>
+                <button type="button" onClick={() => setShowCreate(false)} style={{ flex: 1, padding: '8px', background: '#444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>إلغاء</button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
+
       <div className="legacy-room-list">
         {rooms.map((room, index) => (
           <article className="legacy-room-card" key={room.id}>
@@ -318,15 +365,19 @@ function OnlineUsers({ users }: { users: OnlineUser[] }) {
         <Users /> {formatCount(filtered.length)} متصل
       </div>
       <div className="legacy-user-list">
-        {filtered.map((user, index) => (
-          <div className="legacy-user-row" key={user.id}>
-            <div className="legacy-user-meta">
-              <span className="legacy-flag">🌐</span>
+        {filtered.map((user, index) => {
+          const isAdmin = ownerNames.some(n => user.name.toLowerCase() === n.toLowerCase());
+          return (
+            <div className="legacy-user-row" key={user.id}>
+              <div className="legacy-user-meta">
+                <span className="legacy-flag">🌐</span>
+              </div>
+              <strong style={isAdmin ? { color: '#ffd700', textShadow: '0 0 8px rgba(255,215,0,0.8)' } : {}}>{user.name}</strong>
+              {isAdmin && <span className="legacy-admin-crown" style={{marginRight: '5px'}}>♛</span>}
+              <Avatar name={user.name} initials={user.initials} index={index} isAdmin={isAdmin} />
             </div>
-            <strong>{user.name}</strong>
-            <Avatar name={user.name} initials={user.initials} index={index} />
-          </div>
-        ))}
+          );
+        })}
         {!filtered.length && (
           <div className="legacy-empty-chat">لا يوجد مستخدمين متصلين حالياً</div>
         )}
@@ -355,13 +406,14 @@ function AudioMessage({ message }: { message: Message }) {
 
 function ChatMessageRow({ message, index }: { message: Message; index: number }) {
   const isSystem = message.author.includes('النظام') || message.body.includes('رسائل النظام');
+  const isAdmin = message.authorRole === 'admin' || ownerNames.some(n => message.author.toLowerCase() === n.toLowerCase());
   return (
     <article className={isSystem ? 'legacy-message-row legacy-system-row' : 'legacy-message-row'} style={{ ['--author-color' as string]: authorColors[index % authorColors.length] }}>
-      <Avatar name={message.author} initials={message.authorInitials} index={index} size="sm" />
+      <Avatar name={message.author} initials={message.authorInitials} index={index} size="sm" isAdmin={isAdmin} />
       <div className="legacy-message-content">
         <div className="legacy-message-line">
-          <strong>{message.author}</strong>
-          {message.authorRole === 'admin' && <span className="legacy-admin-crown">♛</span>}
+          <strong style={isAdmin ? { color: '#ffd700', textShadow: '0 0 8px rgba(255,215,0,0.8)' } : {}}>{message.author}</strong>
+          {isAdmin && <span className="legacy-admin-crown">♛</span>}
           <span className="legacy-message-body">
             {message.kind === 'audio' ? <AudioMessage message={message} /> : message.body}
           </span>
@@ -379,12 +431,16 @@ function Composer({ roomId, onLocalMessage, onSend }: { roomId: string; onLocalM
   const sendMessage = () => {
     const body = value.trim();
     if (!body) return;
+    const currentUser = (window as any).currentUser;
+    const currentName = currentUser?.name || localStorage.getItem('chat_real_username') || 'مستخدم';
+    const isAdmin = ownerNames.some(n => currentName.toLowerCase() === n.toLowerCase()) || currentUser?.role === 'admin';
+
     const message: Message = {
       id: `local-${Date.now()}`,
       roomId,
-      author: (window as any).currentUser?.name || '',
-      authorInitials: (window as any).currentUser?.name?.charAt(0) || '',
-      authorRole: 'member',
+      author: currentName,
+      authorInitials: currentName.charAt(0),
+      authorRole: isAdmin ? 'admin' : 'member',
       body,
       sentAt: new Date().toISOString(),
       isMine: true,
@@ -472,7 +528,13 @@ function SettingsView({ onBack }: { onBack: () => void }) {
 
 function ChatWorkspace() {
   const { data: fetchedRooms, isLoading: roomsLoading } = useListChatRooms();
-  const rooms = useMemo(() => (fetchedRooms ?? []) as Room[], [fetchedRooms]);
+  const [customRooms, setCustomRooms] = useState<Room[]>([]);
+  
+  const rooms = useMemo(() => {
+    const apiRooms = (fetchedRooms ?? []) as Room[];
+    return [...apiRooms, ...customRooms];
+  }, [fetchedRooms, customRooms]);
+
   const [selectedRoomId, setSelectedRoomId] = useState('general');
   const [screen, setScreen] = useState<'rooms' | 'chat' | 'online' | 'settings'>('chat');
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -480,6 +542,46 @@ function ChatWorkspace() {
   const [incomingMessages, setIncomingMessages] = useState<Message[]>([]);
   const [presenceUsers, setPresenceUsers] = useState<OnlineUser[]>([]);
   const [, setLocation] = useLocation();
+
+  const [username, setUsername] = useState<string>(() => localStorage.getItem('chat_real_username') || '');
+  const [tempName, setTempName] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => Boolean(localStorage.getItem('chat_real_username')));
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = tempName.trim();
+    if (!trimmed) return;
+    localStorage.setItem('chat_real_username', trimmed);
+    setUsername(trimmed);
+    setIsLoggedIn(true);
+    const isAdmin = ownerNames.some(n => trimmed.toLowerCase() === n.toLowerCase());
+    (window as any).currentUser = { name: trimmed, role: isAdmin ? 'admin' : 'member' };
+  };
+
+  if (!isLoggedIn) {
+    return (
+      <div className="legacy-app-shell" dir="rtl" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#121212', color: '#fff' }}>
+        <form onSubmit={handleLogin} style={{ background: '#1e1e1e', padding: '30px', borderRadius: '16px', width: '90%', maxWidth: '400px', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>
+          <h2 style={{ marginBottom: '10px', color: '#fff' }}>تسجيل الدخول للدردشة</h2>
+          <p style={{ color: '#aaa', fontSize: '13px', marginBottom: '20px' }}>أدخل اسمك الحقيقي (اكتب "المدير" لصلاحيات صاحب الموقع)</p>
+          <input
+            type="text"
+            value={tempName}
+            onChange={(e) => setTempName(e.target.value)}
+            placeholder="اكتب اسمك هنا..."
+            style={{ width: '100%', padding: '12px 16px', marginBottom: '16px', borderRadius: '8px', border: '1px solid #333', background: '#2a2a2a', color: '#fff', textAlign: 'right', outline: 'none', fontSize: '15px' }}
+          />
+          <button type="submit" style={{ width: '100%', padding: '12px', background: '#087db6', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '15px' }}>
+            دخول للدردشة
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  const isOwner = ownerNames.some(n => username.toLowerCase() === n.toLowerCase());
+  (window as any).currentUser = { name: username, role: isOwner ? 'admin' : 'member' };
+
   const activeRoomId = selectedRoomId || rooms[0]?.id || 'general';
   const activeRoom = rooms.find((room) => room.id === activeRoomId) || rooms[0];
   const { data: fetchedMessages } = useListChatMessages(activeRoomId, {
@@ -491,7 +593,7 @@ function ChatWorkspace() {
     (payload) => {
       const message = payload as Partial<Message>;
       if (!message.roomId || !message.id) return;
-      const currentUserName = (window as any).currentUser?.name;
+      const currentUserName = username;
       setIncomingMessages((current) => [
         ...current.filter((item) => item.id !== message.id),
         { ...message, isMine: (Boolean(currentUserName) && message.author === currentUserName) || Boolean(message.isMine) } as Message,
@@ -515,6 +617,19 @@ function ChatWorkspace() {
     setDrawerOpen(false);
   };
 
+  const handleCreateRoom = (roomName: string) => {
+    const newRoom: Room = {
+      id: `room-${Date.now()}`,
+      name: roomName,
+      description: 'غرفة جديدة أنشأها صاحب الموقع',
+      memberCount: 1,
+      unreadCount: 0,
+    };
+    setCustomRooms((prev) => [...prev, newRoom]);
+    setSelectedRoomId(newRoom.id);
+    setScreen('chat');
+  };
+
   const appendLocalMessage = useCallback((message: Message) => {
     setLocalMessages((current) => ({ ...current, [message.roomId]: [...(current[message.roomId] ?? []), message] }));
   }, []);
@@ -532,7 +647,7 @@ function ChatWorkspace() {
         {roomsLoading ? (
           <div className="legacy-loading">جاري تحميل الغرف...</div>
         ) : screen === 'rooms' ? (
-          <RoomCards rooms={rooms} onSelect={selectRoom} />
+          <RoomCards rooms={rooms} onSelect={selectRoom} isOwner={isOwner} onCreateRoom={handleCreateRoom} />
         ) : screen === 'online' ? (
           <OnlineUsers users={presenceUsers} />
         ) : screen === 'settings' ? (
