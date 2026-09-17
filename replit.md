@@ -1,6 +1,6 @@
-# [Project name]
+# واصل — Arabic Real-Time Chat
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+واصل مساحة دردشة عربية RTL لحظية للفرق، مع غرف محادثة، حضور مباشر، رسائل صوتية، وواجهة داكنة متجاوبة.
 
 ## Run & Operate
 
@@ -22,15 +22,23 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/arabic-chat/src/pages/chat-workspace.tsx` — مساحة الدردشة والدرج والحضور والرسائل الصوتية.
+- `artifacts/arabic-chat/src/index.css` — ألوان وطبقات واجهة واصل وحركاتها.
+- `artifacts/api-server/src/chat-data.ts` — بيانات الغرف والرسائل التجريبية والحضور في الذاكرة.
+- `artifacts/api-server/src/index.ts` — خادم Socket.io وأحداث الغرف والرسائل.
+- `lib/api-spec/openapi.yaml` — عقد REST للغرف وسجل الرسائل.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- واجهة الويب تستخدم React/Vite، بينما يبقى REST وSocket.io في خادم Express المشترك.
+- الرسائل والحضور في هذه النسخة محفوظان في الذاكرة لتقديم تجربة لحظية دون فرض تسجيل دخول أو قاعدة بيانات.
+- مسار Socket.io مكشوف عبر `/socket.io` في توجيه خادم API حتى يعمل WebSocket خلف المعاينة والنشر.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- تصفح غرف الفريق والبحث عنها، عرض سجل المحادثة، إرسال الرسائل، وتشغيل معاينات الصوت.
+- حضور مباشر مع حالات الاتصال، شارات المشرفين، ودرج تنقل متجاوب على الهاتف.
+- صفحة تفضيلات عربية للوضع الهادئ وأصوات الرسائل.
 
 ## User preferences
 

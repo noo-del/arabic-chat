@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: chat
+    description: Chat room and message history operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /chat/rooms:
+    get:
+      operationId: listChatRooms
+      tags: [chat]
+      summary: List chat rooms
+      description: Returns the rooms visible in the current chat workspace
+      responses:
+        "200":
+          description: Chat rooms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChatRoom"
+  /chat/rooms/{roomId}/messages:
+    get:
+      operationId: listChatMessages
+      tags: [chat]
+      summary: List recent chat messages
+      description: Returns recent messages for a room
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Recent chat messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChatMessage"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +71,59 @@ components:
           type: string
       required:
         - status
+    ChatRoom:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        memberCount:
+          type: integer
+        unreadCount:
+          type: integer
+      required:
+        - id
+        - name
+        - description
+        - memberCount
+        - unreadCount
+    ChatMessage:
+      type: object
+      properties:
+        id:
+          type: string
+        roomId:
+          type: string
+        author:
+          type: string
+        authorInitials:
+          type: string
+        authorRole:
+          type: string
+          enum: [admin, member]
+        body:
+          type: string
+        sentAt:
+          type: string
+        isMine:
+          type: boolean
+        kind:
+          type: string
+          enum: [text, audio]
+        duration:
+          type: string
+      required:
+        - id
+        - roomId
+        - author
+        - authorInitials
+        - authorRole
+        - body
+        - sentAt
+        - isMine
+        - kind
+        - duration
 

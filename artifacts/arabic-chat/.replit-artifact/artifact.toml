@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Arabic Real-Time Chat"
+description = "A responsive Arabic RTL real-time chat experience with Socket.io messaging, an online users panel, admin badges, audio playback, and a dark mobile-first interface."
+version = "1.0.0"
+id = "artifacts/arabic-chat"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18647
+
+[services.development]
+run = "pnpm --filter @workspace/arabic-chat run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/arabic-chat", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/arabic-chat/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18647"
+BASE_PATH = "/"

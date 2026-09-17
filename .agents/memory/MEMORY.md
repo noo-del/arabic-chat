@@ -1,0 +1,1 @@
+- [Socket.io preview routing](socketio-proxy-routing.md) — declare `/socket.io` on the API service that owns the Socket.io server.
