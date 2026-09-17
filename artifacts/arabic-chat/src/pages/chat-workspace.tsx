@@ -65,8 +65,10 @@ type SocketState = 'connected' | 'connecting' | 'offline';
 const avatarColors = ['#f4a7bd', '#9fdbe3', '#f4d275', '#c5b3ef', '#f1aa83', '#acd69d'];
 const authorColors = ['#c11563', '#e83d24', '#087db6', '#9f159d', '#188fba'];
 
-// أسماء صاحب الموقع والمدراء للحصول على التاج واللمعة الذهبية
-const ownerNames = ['المدير', 'صاحب الموقع', 'الادمن', 'Admin'];
+// 🛡️ بيانات صاحب الموقع والمدير الأساسية
+const OWNER_EMAIL = 'noor.altrak@gmail.com';
+const OWNER_PASSWORD = 'noor963852741';
+const ownerNames = ['المدير', 'صاحب الموقع', 'الادمن', 'Admin', 'نور'];
 
 function formatCount(value: number) {
   return new Intl.NumberFormat('ar-SA').format(value);
@@ -431,9 +433,9 @@ function Composer({ roomId, onLocalMessage, onSend }: { roomId: string; onLocalM
   const sendMessage = () => {
     const body = value.trim();
     if (!body) return;
-    const currentUser = (window as any).currentUser;
-    const currentName = currentUser?.name || localStorage.getItem('chat_real_username') || 'مستخدم';
-    const isAdmin = ownerNames.some(n => currentName.toLowerCase() === n.toLowerCase()) || currentUser?.role === 'admin';
+    const currentName = localStorage.getItem('chat_real_username') || 'مستخدم';
+    const currentEmail = localStorage.getItem('chat_real_email') || '';
+    const isAdmin = currentEmail.toLowerCase() === OWNER_EMAIL.toLowerCase() || ownerNames.some(n => currentName.toLowerCase() === n.toLowerCase());
 
     const message: Message = {
       id: `local-${Date.now()}`,
@@ -544,18 +546,29 @@ function ChatWorkspace() {
   const [, setLocation] = useLocation();
 
   const [username, setUsername] = useState<string>(() => localStorage.getItem('chat_real_username') || '');
+  const [email, setEmail] = useState<string>(() => localStorage.getItem('chat_real_email') || '');
   const [tempName, setTempName] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => Boolean(localStorage.getItem('chat_real_username')));
+  const [tempEmail, setTempEmail] = useState('');
+  const [tempPassword, setTempPassword] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => Boolean(localStorage.getItem('chat_real_email') || localStorage.getItem('chat_real_username')));
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmed = tempName.trim();
-    if (!trimmed) return;
-    localStorage.setItem('chat_real_username', trimmed);
-    setUsername(trimmed);
+    const trimmedName = tempName.trim();
+    const trimmedEmail = tempEmail.trim().toLowerCase();
+    const trimmedPassword = tempPassword.trim();
+    if (!trimmedName || !trimmedEmail) return;
+
+    localStorage.setItem('chat_real_username', trimmedName);
+    localStorage.setItem('chat_real_email', trimmedEmail);
+    setUsername(trimmedName);
+    setEmail(trimmedEmail);
     setIsLoggedIn(true);
-    const isAdmin = ownerNames.some(n => trimmed.toLowerCase() === n.toLowerCase());
-    (window as any).currentUser = { name: trimmed, role: isAdmin ? 'admin' : 'member' };
+
+    const isOwner = (trimmedEmail === OWNER_EMAIL.toLowerCase() && trimmedPassword === OWNER_PASSWORD) || 
+                    trimmedEmail === OWNER_EMAIL.toLowerCase() || 
+                    ownerNames.some(n => trimmedName.toLowerCase() === n.toLowerCase());
+    (window as any).currentUser = { name: trimmedName, email: trimmedEmail, role: isOwner ? 'admin' : 'member' };
   };
 
   if (!isLoggedIn) {
@@ -563,12 +576,26 @@ function ChatWorkspace() {
       <div className="legacy-app-shell" dir="rtl" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#121212', color: '#fff' }}>
         <form onSubmit={handleLogin} style={{ background: '#1e1e1e', padding: '30px', borderRadius: '16px', width: '90%', maxWidth: '400px', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>
           <h2 style={{ marginBottom: '10px', color: '#fff' }}>تسجيل الدخول للدردشة</h2>
-          <p style={{ color: '#aaa', fontSize: '13px', marginBottom: '20px' }}>أدخل اسمك الحقيقي (اكتب "المدير" لصلاحيات صاحب الموقع)</p>
+          <p style={{ color: '#aaa', fontSize: '13px', marginBottom: '20px' }}>أدخل اسمك وبريدك الإلكتروني وكلمة المرور لتفعيل الإدارة</p>
           <input
             type="text"
             value={tempName}
             onChange={(e) => setTempName(e.target.value)}
             placeholder="اكتب اسمك هنا..."
+            style={{ width: '100%', padding: '12px 16px', marginBottom: '12px', borderRadius: '8px', border: '1px solid #333', background: '#2a2a2a', color: '#fff', textAlign: 'right', outline: 'none', fontSize: '15px' }}
+          />
+          <input
+            type="email"
+            value={tempEmail}
+            onChange={(e) => setTempEmail(e.target.value)}
+            placeholder="البريد الإلكتروني..."
+            style={{ width: '100%', padding: '12px 16px', marginBottom: '12px', borderRadius: '8px', border: '1px solid #333', background: '#2a2a2a', color: '#fff', textAlign: 'right', outline: 'none', fontSize: '15px' }}
+          />
+          <input
+            type="password"
+            value={tempPassword}
+            onChange={(e) => setTempPassword(e.target.value)}
+            placeholder="كلمة المرور..."
             style={{ width: '100%', padding: '12px 16px', marginBottom: '16px', borderRadius: '8px', border: '1px solid #333', background: '#2a2a2a', color: '#fff', textAlign: 'right', outline: 'none', fontSize: '15px' }}
           />
           <button type="submit" style={{ width: '100%', padding: '12px', background: '#087db6', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '15px' }}>
@@ -579,8 +606,8 @@ function ChatWorkspace() {
     );
   }
 
-  const isOwner = ownerNames.some(n => username.toLowerCase() === n.toLowerCase());
-  (window as any).currentUser = { name: username, role: isOwner ? 'admin' : 'member' };
+  const isOwner = email.toLowerCase() === OWNER_EMAIL.toLowerCase() || ownerNames.some(n => username.toLowerCase() === n.toLowerCase());
+  (window as any).currentUser = { name: username, email: email, role: isOwner ? 'admin' : 'member' };
 
   const activeRoomId = selectedRoomId || rooms[0]?.id || 'general';
   const activeRoom = rooms.find((room) => room.id === activeRoomId) || rooms[0];
