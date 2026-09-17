@@ -5,7 +5,6 @@ import { Server } from "socket.io";
 import {
   getRoomMessages,
   messagesByRoom,
-  onlineUsers,
   type ChatMessage,
 } from "./chat-data";
 
@@ -31,12 +30,16 @@ const io = new Server(httpServer, {
   },
 });
 
+// مصفوفة فارغة لتخزين المستخدمين الحقيقيين وإلغاء الأسماء الوهمية
+let liveUsers: any[] = [];
+
 const broadcastPresence = () => {
-  io.emit("presence:update", onlineUsers);
+  io.emit("presence:update", liveUsers);
 };
 
 io.on("connection", (socket) => {
-  socket.emit("presence:update", onlineUsers);
+  // إرسال القائمة الحقيقية (الفارغة مبدئياً) بدلاً من الوهمية
+  socket.emit("presence:update", liveUsers);
 
   socket.on("room:join", (roomId: string) => {
     socket.join(roomId);
@@ -55,7 +58,7 @@ io.on("connection", (socket) => {
         id: `live-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         roomId: payload.roomId,
         author: payload.author?.trim() || "أنت",
-        authorInitials: "أ",
+        authorInitials: payload.author?.charAt(0) || "أ",
         authorRole: "member",
         body,
         sentAt: new Intl.DateTimeFormat("ar", {
