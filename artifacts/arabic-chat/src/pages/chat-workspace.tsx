@@ -111,7 +111,7 @@ function useLiveSocket(
       socket.emit('message:send', {
         roomId: message.roomId,
         body: message.body,
-        author: 'سارة المنصور',
+        author: message.author,
       });
     }
   }, []);
@@ -158,18 +158,18 @@ function TopBar({ onMenu, onOpenOnline }: { onMenu: () => void; onOpenOnline: ()
         </button>
       </div>
       <div className="legacy-topbar-right">
-        <button type="button" className="legacy-top-icon legacy-top-label" aria-label="الرسائل">
+        <button type="button" className="legacy-top-icon legacy-top-label" aria-label="محادثات">
           <MessageCircle />
-          <small>رسالة</small>
+          <small>محادثات</small>
         </button>
         <button type="button" className="legacy-top-icon legacy-top-label legacy-notification" aria-label="الإشعارات">
           <Bell />
           <b>1</b>
           <small>إشعارات</small>
         </button>
-        <button type="button" className="legacy-top-icon legacy-top-label" onClick={onOpenOnline} aria-label="الحساب">
+        <button type="button" className="legacy-top-icon legacy-top-label" onClick={onOpenOnline} aria-label="حسابي">
           <UserCircle />
-          <small>إعدادات</small>
+          <small>حسابي</small>
         </button>
       </div>
     </header>
@@ -196,7 +196,7 @@ function BottomBar({
       </button>
       <button type="button" className="legacy-radio-button" aria-label="الراديو">
         <Play />
-        <span>Radio</span>
+        <span>راديو</span>
       </button>
       <button type="button" className={active === 'rooms' || active === 'chat' ? 'legacy-bottom-link active' : 'legacy-bottom-link'} onClick={onRooms}>
         <Home />
@@ -204,11 +204,11 @@ function BottomBar({
       </button>
       <button type="button" className={active === 'online' ? 'legacy-bottom-link active' : 'legacy-bottom-link'} onClick={onOnline}>
         <Users />
-        <span>المتصلين</span>
+        <span>المتواجدون</span>
       </button>
       <button type="button" className={active === 'settings' ? 'legacy-bottom-link active' : 'legacy-bottom-link'} onClick={onSettings}>
         <Settings />
-        <span>خيارات</span>
+        <span>الإعدادات</span>
       </button>
     </nav>
   );
@@ -311,23 +311,25 @@ function OnlineUsers({ users }: { users: OnlineUser[] }) {
         </button>
         <div className="legacy-search-input">
           <Search />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="البحث عن أشخاص" aria-label="البحث عن أشخاص" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="البحث عن أشخاص..." aria-label="البحث عن أشخاص" />
         </div>
       </div>
       <div className="legacy-online-count">
-        <Users /> {formatCount(filtered.length || users.length)} متصل
+        <Users /> {formatCount(filtered.length)} متصل
       </div>
       <div className="legacy-user-list">
         {filtered.map((user, index) => (
           <div className="legacy-user-row" key={user.id}>
             <div className="legacy-user-meta">
-              <span className="legacy-flag">🇯🇴</span>
-              <span className="legacy-gender">♀</span>
+              <span className="legacy-flag">🌐</span>
             </div>
             <strong>{user.name}</strong>
             <Avatar name={user.name} initials={user.initials} index={index} />
           </div>
         ))}
+        {!filtered.length && (
+          <div className="legacy-empty-chat">لا يوجد مستخدمين متصلين حالياً</div>
+        )}
       </div>
     </section>
   );
@@ -380,8 +382,8 @@ function Composer({ roomId, onLocalMessage, onSend }: { roomId: string; onLocalM
     const message: Message = {
       id: `local-${Date.now()}`,
       roomId,
-      author: 'سارة المنصور',
-      authorInitials: 'سم',
+      author: (window as any).currentUser?.name || '',
+      authorInitials: (window as any).currentUser?.name?.charAt(0) || '',
       authorRole: 'member',
       body,
       sentAt: new Date().toISOString(),
@@ -389,10 +391,10 @@ function Composer({ roomId, onLocalMessage, onSend }: { roomId: string; onLocalM
       kind: 'text',
       duration: '',
     };
+
     onLocalMessage(message);
     onSend(message);
     setValue('');
-    inputRef.current?.focus();
   };
 
   return (
@@ -489,9 +491,10 @@ function ChatWorkspace() {
     (payload) => {
       const message = payload as Partial<Message>;
       if (!message.roomId || !message.id) return;
+      const currentUserName = (window as any).currentUser?.name;
       setIncomingMessages((current) => [
         ...current.filter((item) => item.id !== message.id),
-        { ...message, isMine: message.author === 'سارة المنصور' || Boolean(message.isMine) } as Message,
+        { ...message, isMine: (Boolean(currentUserName) && message.author === currentUserName) || Boolean(message.isMine) } as Message,
       ]);
     },
     (payload) => {
