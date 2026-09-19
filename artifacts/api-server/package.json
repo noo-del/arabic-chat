@@ -4,10 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "export NODE_ENV=development && pnpm run build && node dist/index.js",
+    "dev": "export NODE_ENV=development && pnpm run build && node dist/index.mjs",
     "build": "node ./build.mjs",
-    "start": "node --enable-source-maps dist/index.mjs"
-
+    "start": "node --enable-source-maps dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
