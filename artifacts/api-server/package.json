@@ -4,11 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "export NODE_ENV=development && p",
+    "dev": "export NODE_ENV=development && pnpm run build && node dist/index.js",
     "build": "node ./build.mjs",
-    "start": "node --enable-source-maps dist/index.js"
-
-    "typecheck": "tsc -p tsconfig.json --noE"
+    "start": "node --enable-source-maps dist/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@workspace/api-zod": "workspace:*",
@@ -33,9 +32,7 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "esbuild",
-      "@firebase/util",
-      "protobufjs"
+      "esbuild"
     ]
   }
 }
