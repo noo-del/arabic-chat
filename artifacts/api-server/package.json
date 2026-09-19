@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "export NODE_ENV=development && p",
     "build": "node ./build.mjs",
-    "start": "node --enable-source-maps ./di",
+    "start": "node --enable-source-maps dist/index.js"
+
     "typecheck": "tsc -p tsconfig.json --noE"
   },
   "dependencies": {
