@@ -30,7 +30,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// أضف هذا المسار هنا لكي يستجيب السيرفر لـ UptimeRobot برمز 200 OK
 app.get("/", (req, res) => {
   res.status(200).send("Server is running!");
 });
+
+export default app;
