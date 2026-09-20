@@ -6,9 +6,8 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
-// @ts-ignore
 app.use(
-  pinoHttp({
+  (pinoHttp as any)({
     logger,
     serializers: {
       req(req) {
