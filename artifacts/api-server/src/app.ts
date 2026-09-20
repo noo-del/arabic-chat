@@ -6,6 +6,7 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
+// @ts-ignore
 app.use(
   pinoHttp({
     logger,
@@ -33,7 +34,3 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
   res.status(200).send("Server is running!");
 });
-
-app.use("/api", router);
-
-export default app;
